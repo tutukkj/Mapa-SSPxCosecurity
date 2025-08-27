@@ -7,6 +7,27 @@ import plotly.graph_objects as go
 import json
 import os
 from flask import Flask
+from flask import Flask, render_template
+from dash import Dash, dcc, html
+from dash.dependencies import Input, Output
+import pandas as pd
+import plotly.express as px
+import json
+
+# ==============================
+# 1. SERVIDOR FLASK
+# ==============================
+server = Flask(__name__)
+
+@server.route('/')
+def index():
+    return render_template('index.html')
+
+# ==============================
+# 2. DASH
+# ==============================
+app = Dash(__name__, server=server, url_base_pathname='/dashboard/')
+
 
 # ==============================
 # 1) CARREGAMENTO E PRÉ-PROCESSAMENTO
@@ -479,8 +500,6 @@ meses_mapping = {nome: num for num, nome in nomes_meses.items()}
 # ==============================
 # 2) SERVIDOR FLASK E DASH
 # ==============================
-server = Flask(__name__)
-app = Dash(__name__, server=server)
 
 # ==============================
 # 3) LAYOUT DASH (AJUSTADO)
@@ -863,15 +882,10 @@ def atualizar_dashboard_completo(mes, regiao, cidade, bairro, natureza, evento, 
         fig_mapa_eventos, fig_hora_eventos, card_evento_frequente, card_horario_eventos
     )
 
-# =
-# 5) EXECUÇÃO
-# =
-# =
-# 5) EXECUÇÃO
-# =
+
+
+# ==============================
+# 3. EXECUÇÃO
+# ==============================
 if __name__ == "__main__":
-    # Esta linha só será executada quando você rodar 'python app.py' localmente.
-    # O Gunicorn ignorará este bloco.
-    port = int(os.environ.get("PORT", 8050))
-    debug_mode = os.environ.get("DEBUG", "True").lower() in ["true", "1", "yes"]
-    app.run(host="0.0.0.0", port=port, debug=debug_mode)
+    server.run(debug=True)
