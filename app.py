@@ -45,6 +45,15 @@ df_criminal['ano'] = df_criminal[COLUNA_DATA_CRIM].dt.year.astype('Int64')
 df_criminal['mes'] = df_criminal[COLUNA_DATA_CRIM].dt.month
 df_criminal['cidade'] = 'São Paulo' # Adiciona a cidade para permitir o filtro unificado
 
+# --- ADIÇÃO PARA CONVERTER O NÚMERO DO MÊS PARA O NOME DO MÊS ---
+# Cria um dicionário para mapear números para nomes de meses
+nomes_meses = {
+    1: 'Janeiro', 2: 'Fevereiro', 3: 'Março', 4: 'Abril', 5: 'Maio', 6: 'Junho',
+    7: 'Julho', 8: 'Agosto', 9: 'Setembro', 10: 'Outubro', 11: 'Novembro', 12: 'Dezembro'
+}
+# Aplica o mapeamento à coluna 'mes'
+df_criminal['mes_nome'] = df_criminal['mes'].map(nomes_meses)
+
 # Parser robusto de hora (0-23) para dados criminais
 def extrair_hora_robusta(serie):
     if serie is None or serie.name is None:
@@ -128,6 +137,10 @@ for col in ['bairro', 'cidade', 'evento_nome']:
     if col in df_eventos.columns:
         df_eventos[col] = df_eventos[col].astype('string').str.strip().str.title()
         df_eventos[col] = df_eventos[col].replace({'': pd.NA})
+        
+# --- ADIÇÃO PARA CONVERTER O NÚMERO DO MÊS PARA O NOME DO MÊS EM EVENTOS ---
+df_eventos['mes_nome'] = df_eventos['mes'].map(nomes_meses)
+
 
 # Escala de cores personalizada para os mapas
 escala_personalizada = [
@@ -148,7 +161,9 @@ anos_unicos = sorted([int(a) for a in set(df_criminal['ano'].dropna().unique()).
 cidades_unicas = sorted(list(set(df_criminal['cidade'].dropna().astype(str).unique()).union(set(df_eventos['cidade'].dropna().astype(str).unique()))))
 eventos_unicos = sorted(df_eventos['evento_nome'].dropna().unique())
 horas_unicas = list(range(24))
-meses_unicos = sorted(df_criminal['mes'].dropna().unique()) # Usa df_criminal pois já tem a coluna 'mes' e os meses são os mesmos
+# Usa os nomes dos meses agora
+meses_unicos = [nomes_meses[i] for i in sorted(df_criminal['mes'].dropna().unique())]
+meses_mapping = {nome: num for num, nome in nomes_meses.items()}
 
 # ==============================
 # 2) SERVIDOR FLASK E DASH
@@ -209,9 +224,10 @@ app.layout = html.Div(
                 )]),
 
                 # Filtros comuns
+                # Alterado para usar o nome do mês como label e o número como valor
                 html.Div(style=filter_style, children=[html.Label("Mês:", style=filter_style), dcc.Dropdown(
                     id='filtro-mes', 
-                    options=[{'label': f'Mês {i}', 'value': i} for i in meses_unicos],
+                    options=[{'label': i, 'value': meses_mapping[i]} for i in meses_unicos],
                     value=None, 
                     clearable=True, 
                     placeholder="Todos os Meses",
