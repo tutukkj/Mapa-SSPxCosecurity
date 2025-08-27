@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - CoSecurity</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+</head>
+<body>
+
+    <div class="navbar">
+        <div class="navbar-left">
+            <button class="menu-button">
+                <i class="fas fa-bars"></i>
+            </button>
+        </div>
+        <div class="navbar-right">
+            <span class="user-name">Arthur Nunes</span>
+            <i class="fas fa-user-circle user-icon"></i>
+        </div>
+    </div>
+
+    <div class="content-wrapper">
+        <div class="sidebar">
+            <div class="logo">
+                <img src="{{ url_for('static', filename='logo.png') }}" alt="Logo">
+            </div>
+            <a href="/"> <i class="fas fa-home"></i> Home </a>
+            <a class="active" href="/dashboard"> <i class="fas fa-chart-bar"></i> Dashboard </a>
+            <a href="#"> <i class="fas fa-eye"></i> The Eye </a>
+        </div>
+    
+        <div class="main-content">
+            <div class="header">
+                <h1>Dashboard de Ocorrências </h1>
+                <p>Visualize os dados atualizados em tempo real</p>
+            </div>
+            <div class="container mt-4">
+                <iframe id="dashboard-iframe" src="/dashboard/" style="width: 100%; height: 100%;"></iframe>></iframe>
+            </div>
+        </div>
+    </div>
+
+    <!-- Script para ajustar a altura do iframe dinamicamente -->
+    <script>
+        window.onload = function() {
+            const iframe = document.getElementById('dashboard-iframe');
+            
+            if (iframe) {
+                iframe.onload = function() {
+                    try {
+                        const innerDoc = iframe.contentDocument || iframe.contentWindow.document;
+
+                        // Função para ajustar a altura do iframe
+                        const adjustIframeHeight = () => {
+                            // Calcula a altura real do conteúdo
+                            const scrollHeight = innerDoc.body.scrollHeight;
+                            iframe.style.height = (scrollHeight + 30) + 'px'; // Adiciona uma pequena margem
+                            console.log("Altura do iframe ajustada para: " + (scrollHeight + 30) + "px");
+                        };
+
+                        // Cria um observador para detectar mudanças no DOM do iframe
+                        const observer = new MutationObserver(adjustIframeHeight);
+                        
+                        // Observa mudanças no corpo do documento do iframe (criação de nós, etc)
+                        observer.observe(innerDoc.body, { childList: true, subtree: true, attributes: true });
+
+                        // Chama o ajuste de altura inicial
+                        adjustIframeHeight();
+
+                    } catch (e) {
+                        console.error("Não foi possível ajustar a altura do iframe. Verifique a política de mesma origem.", e);
+                    }
+                };
+            }
+        };
+    </script>
+</body>
+</html>

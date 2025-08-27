@@ -1,0 +1,133 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Segoe UI', sans-serif;
+}
+
+body, html {
+    height: 100%;
+    background-color: #f5f6fa;
+}
+
+body {
+    display: flex;
+    flex-direction: column;
+}
+
+.navbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: #002B5B;
+    color: white;
+    padding: 10px 20px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    min-height: 60px;
+}
+
+.navbar-left .menu-button {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 24px;
+    cursor: pointer;
+}
+
+.navbar-right {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.user-name {
+    font-size: 16px;
+    font-weight: 500;
+}
+
+.user-icon {
+    font-size: 24px;
+}
+
+.content-wrapper {
+    display: flex;
+    flex-grow: 1;
+}
+
+.sidebar {
+    width: 250px;
+    background-color: #002B5B;
+    color: white;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding-top: 20px;
+}
+
+.sidebar .logo img {
+    width: 150px;
+    margin-bottom: 40px;
+}
+
+.sidebar a {
+    padding: 15px 20px;
+    width: 100%;
+    text-decoration: none;
+    color: white;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    transition: background-color 0.3s;
+}
+
+.sidebar a:hover {
+    background-color: #0059b3;
+}
+
+.sidebar a.active {
+    background-color: #007bff;
+    border-radius: 8px;
+    margin: 5px;
+}
+
+.sidebar i {
+    width: 20px;
+}
+
+.main-content {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 30px;
+}
+
+.main-content .header {
+    background-color: white;
+    padding: 30px;
+    border-radius: 12px;
+    margin-bottom: 30px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    text-align: center;
+    flex-shrink: 0;
+}
+
+.main-content .header h1 {
+    color: #003366;
+    margin-bottom: 10px;
+}
+
+.main-content .header p {
+    color: #333;
+}
+
+.container {
+    flex-grow: 1;
+}
+
+#dashboard-iframe {
+    width: 100%;
+    min-height: 80vh; 
+    border: none;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
