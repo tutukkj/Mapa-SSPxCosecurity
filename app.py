@@ -866,5 +866,12 @@ def atualizar_dashboard_completo(mes, regiao, cidade, bairro, natureza, evento, 
 # =
 # 5) EXECUÇÃO
 # =
+# =
+# 5) EXECUÇÃO
+# =
 if __name__ == "__main__":
-    app.run(debug=True)
+    # Esta linha só será executada quando você rodar 'python app.py' localmente.
+    # O Gunicorn ignorará este bloco.
+    port = int(os.environ.get("PORT", 8050))
+    debug_mode = os.environ.get("DEBUG", "True").lower() in ["true", "1", "yes"]
+    app.run(host="0.0.0.0", port=port, debug=debug_mode)
