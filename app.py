@@ -6,40 +6,39 @@ import plotly.express as px
 import plotly.graph_objects as go
 import json
 import os
-from flask import Flask
 from flask import Flask, render_template
-from dash import Dash, dcc, html
-from dash.dependencies import Input, Output
-import pandas as pd
-import plotly.express as px
-import json
 
 # ==============================
 # 1. SERVIDOR FLASK
 # ==============================
+# Instância do Flask que será usada para o Gunicorn
 server = Flask(__name__)
 
 @server.route('/')
 def index():
-    return render_template('index.html')
+    # Renderiza o arquivo HTML (se houver, caso contrário, retorne uma mensagem simples)
+    return '<h1>Dashboard Ocorrências x Eventos</h1><p>Vá para /dashboard para ver a aplicação Dash.</p>'
 
 # ==============================
 # 2. DASH
 # ==============================
+# A instância do Dash é criada a partir do servidor Flask existente.
 app = Dash(__name__, server=server, url_base_pathname='/dashboard/')
-
 
 # ==============================
 # 1) CARREGAMENTO E PRÉ-PROCESSAMENTO
 # ==============================
 # Carrega e processa os dados criminais
-CRIMINAL_FILE = "SPDadosCriminais_SAO_PAULO_limpo.xlsx"
+# Usa variáveis de ambiente para o caminho do arquivo, se disponível
+CRIMINAL_FILE = os.getenv("CRIMINAL_FILE", "SPDadosCriminais_SAO_PAULO_limpo.xlsx")
 
 try:
     df_criminal = pd.read_excel(CRIMINAL_FILE, engine='openpyxl')
     print(f"Planilha '{CRIMINAL_FILE}' carregada com sucesso.")
 except FileNotFoundError:
     print(f"Erro: O arquivo '{CRIMINAL_FILE}' não foi encontrado.")
+    # Em produção, um erro Fatal é mais adequado que um raise.
+    # Em Railway, o build falharia se os arquivos não estivessem lá.
     raise
 except Exception as e:
     print(f"Erro ao carregar o arquivo '{CRIMINAL_FILE}': {e}")
@@ -111,320 +110,91 @@ df_criminal['hora'] = extrair_hora_robusta(df_criminal.get(COLUNA_HORA_CRIM))
 # Regiões para dados criminais
 zonas_sao_paulo = {
     'Zona Norte': [
-        'Água Fria',
-        'Brasilândia',
-        'Casa Verde',
-        'Freguesia do Ó',
-        'Jaçanã',
-        'Jardim Japão',
-        'Jardim Julieta',
-        'Jardim Leme',
-        'Jardim Leonor Mendes de Barros',
-        'Jardim Mabel',
-        'Jardim Recanto Verde',
-        'Lauzane Paulista',
-        'Limão',
-        'Mandaqui',
-        'Mata Fria',
-        'Parada Inglesa',
-        'Parque Edu Chaves',
-        'Parque Mandaqui',
-        'Parque Novo Mundo',
-        'Parque Paineiras',
-        'Parque Peruche',
-        'Parque Rodrigues Alves',
-        'Parque Palmas do Tremembé',
-        'Parque Vila Guilherme',
-        'Pari',
-        'Perus',
-        'Piqueri',
-        'Residencial Sol Nascente',
-        'Santa Terezinha',
-        'Santana',
-        'Tucuruvi',
-        'Vila Albertina',
-        'Vila Amália',
-        'Vila Bancária',
-        'Vila Brasilândia',
-        'Vila Cachoeira',
-        'Vila Dionísia',
-        'Vila Ede',
-        'Vila Elisa',
-        'Vila Ester',
-        'Vila Fenelon',
-        'Vila Formosa',
-        'Vila Guilherme',
-        'Vila Gustavo',
-        'Vila Mazzei',
-        'Vila Medeiros',
-        'Vila Nilo',
-        'Vila Nova Cachoeirinha',
-        'Vila Nova Mazzei',
-        'Vila Nova Parada',
-        'Vila Paiva',
-        'Vila Perus',
-        'Vila Pirituba',
-        'Vila Sabrina',
-        'Vila Santa Teresinha',
-        'Vila Siqueira',
-        'Vila Souza',
-        'Vila Vergueiro',
-        'Vila Vitória',
-        'Vila Zat'
+        'Água Fria', 'Brasilândia', 'Casa Verde', 'Freguesia do Ó', 'Jaçanã',
+        'Jardim Japão', 'Jardim Julieta', 'Jardim Leme', 'Jardim Leonor Mendes de Barros',
+        'Jardim Mabel', 'Jardim Recanto Verde', 'Lauzane Paulista', 'Limão', 'Mandaqui',
+        'Mata Fria', 'Parada Inglesa', 'Parque Edu Chaves', 'Parque Mandaqui',
+        'Parque Novo Mundo', 'Parque Paineiras', 'Parque Peruche', 'Parque Rodrigues Alves',
+        'Parque Palmas do Tremembé', 'Parque Vila Guilherme', 'Pari', 'Perus',
+        'Piqueri', 'Residencial Sol Nascente', 'Santa Terezinha', 'Santana', 'Tucuruvi',
+        'Vila Albertina', 'Vila Amália', 'Vila Bancária', 'Vila Brasilândia',
+        'Vila Cachoeira', 'Vila Dionísia', 'Vila Ede', 'Vila Elisa', 'Vila Ester',
+        'Vila Fenelon', 'Vila Formosa', 'Vila Guilherme', 'Vila Gustavo', 'Vila Mazzei',
+        'Vila Medeiros', 'Vila Nilo', 'Vila Nova Cachoeirinha', 'Vila Nova Mazzei',
+        'Vila Nova Parada', 'Vila Paiva', 'Vila Perus', 'Vila Pirituba',
+        'Vila Sabrina', 'Vila Santa Teresinha', 'Vila Siqueira', 'Vila Souza',
+        'Vila Vergueiro', 'Vila Vitória', 'Vila Zat'
     ],
     'Zona Sul': [
-        'Chácara Flora',
-        'Chácara Santo Antônio',
-        'Cidade Dutra',
-        'Ibirapuera',
-        'Ipiranga',
-        'Jabaquara',
-        'Jardim América',
-        'Jardim Ângela',
-        'Jardim Arpoador',
-        'Jardim da Glória',
-        'Jardim das Oliveiras',
-        'Jardim das Rosas',
-        'Jardim do Carmo',
-        'Jardim Maringá',
-        'Jardim Mirante',
-        'Jardim Monte Belo',
-        'Jardim Monte Kemel',
-        'Jardim Monte Verde',
-        'Jardim Morais Prado',
-        'Jardim Nardini',
-        'Jardim Nova Vitória I',
-        'Jardim Paris',
-        'Jardim Paulista',
-        'Jardim Paulistano',
-        'Jardim Prudência',
-        'Jardim Santa Amélia',
-        'Jardim Santa Cruz',
-        'Jardim Santa Helena',
-        'Jardim Santa Rita',
-        'Jardim Santo Amaro',
-        'Jardim São João',
-        'Jardim São José',
-        'Jardim São Luís',
-        'Jardim São Sebastião',
-        'Jardim São Vicente',
-        'Jardim Soraia',
-        'Jardim Umuarama',
-        'Jardim Vaz de Lima',
-        'Jardim Vergueiro',
-        'Jardins',
-        'Jurubatuba',
-        'Moema',
-        'Morumbi',
-        'Paraisópolis',
-        'Parelheiros',
-        'Parque Alto do Rio Bonito',
-        'Parque Americano',
-        'Parque Arariba',
-        'Parque das Fontes',
-        'Parque do Estado',
-        'Parque Fernanda',
-        'Parque Grajaú',
-        'Parque Independência',
-        'Parque Novo Grajaú',
-        'Parque Novo Santo Amaro',
-        'Parque Residencial Cocaia',
-        'Parque Santo Amaro',
-        'Parque Santo Antônio',
-        'Parque São Paulo',
-        'Parque São Rafael',
-        'Parque Sevilha',
-        'Pedreira',
-        'Santo Amaro',
-        'Sapopemba',
-        'Saúde',
-        'Socorro',
-        'Vila Americana',
-        'Vila Andrade',
-        'Vila Arcádia',
-        'Vila Bandeirantes',
-        'Vila Brasilina',
-        'Vila Campestre',
-        'Vila Campo Grande',
-        'Vila Caraguatá',
-        'Vila Clemência',
-        'Vila Clementino',
-        'Vila das Mercês',
-        'Vila do Encontro',
-        'Vila Dom Pedro I',
-        'Vila Fátima',
-        'Vila Gertrudes',
-        'Vila Guacuri',
-        'Vila Guarani',
-        'Vila Gumercindo',
-        'Vila Inglesa',
-        'Vila Joaniza',
-        'Vila Mariana',
-        'Vila Mascote',
-        'Vila Missionária',
-        'Vila Monumento',
-        'Vila Moraes',
-        'Vila Olímpia',
-        'Vila Pedreira',
-        'Vila Prudente',
-        'Vila Remo',
-        'Vila Santa Catarina',
-        'Vila Santa Cecília',
-        'Vila Santa Delphina',
-        'Vila Santa Efigênia',
-        'Vila Santa Tereza',
-        'Vila São Francisco',
-        'Vila São José',
-        'Vila São Pedro',
-        'Vila São Paulo',
-        'Vila Socorro',
-        'Vila Sofia',
-        'Vila Suzana',
-        'Vila Vera',
-        'Vila do Sítio',
-        'Várzea de Baixo'
+        'Chácara Flora', 'Chácara Santo Antônio', 'Cidade Dutra', 'Ibirapuera',
+        'Ipiranga', 'Jabaquara', 'Jardim América', 'Jardim Ângela', 'Jardim Arpoador',
+        'Jardim da Glória', 'Jardim das Oliveiras', 'Jardim das Rosas',
+        'Jardim do Carmo', 'Jardim Maringá', 'Jardim Mirante', 'Jardim Monte Belo',
+        'Jardim Monte Kemel', 'Jardim Monte Verde', 'Jardim Morais Prado',
+        'Jardim Nardini', 'Jardim Nova Vitória I', 'Jardim Paris', 'Jardim Paulista',
+        'Jardim Paulistano', 'Jardim Prudência', 'Jardim Santa Amélia',
+        'Jardim Santa Cruz', 'Jardim Santa Helena', 'Jardim Santa Rita',
+        'Jardim Santo Amaro', 'Jardim São João', 'Jardim São José',
+        'Jardim São Luís', 'Jardim São Sebastião', 'Jardim São Vicente',
+        'Jardim Soraia', 'Jardim Umuarama', 'Jardim Vaz de Lima', 'Jardim Vergueiro',
+        'Jardins', 'Jurubatuba', 'Moema', 'Morumbi', 'Paraisópolis', 'Parelheiros',
+        'Parque Alto do Rio Bonito', 'Parque Americano', 'Parque Arariba',
+        'Parque das Fontes', 'Parque do Estado', 'Parque Fernanda', 'Parque Grajaú',
+        'Parque Independência', 'Parque Novo Grajaú', 'Parque Novo Santo Amaro',
+        'Parque Residencial Cocaia', 'Parque Santo Amaro', 'Parque Santo Antônio',
+        'Parque São Paulo', 'Parque São Rafael', 'Parque Sevilha', 'Pedreira',
+        'Santo Amaro', 'Sapopemba', 'Saúde', 'Socorro', 'Vila Americana',
+        'Vila Andrade', 'Vila Arcádia', 'Vila Bandeirantes', 'Vila Brasilina',
+        'Vila Campestre', 'Vila Campo Grande', 'Vila Caraguatá', 'Vila Clemência',
+        'Vila Clementino', 'Vila das Mercês', 'Vila do Encontro', 'Vila Dom Pedro I',
+        'Vila Fátima', 'Vila Gertrudes', 'Vila Guacuri', 'Vila Guarani',
+        'Vila Gumercindo', 'Vila Inglesa', 'Vila Joaniza', 'Vila Mariana',
+        'Vila Mascote', 'Vila Missionária', 'Vila Monumento', 'Vila Moraes',
+        'Vila Olímpia', 'Vila Pedreira', 'Vila Prudente', 'Vila Remo',
+        'Vila Santa Catarina', 'Vila Santa Cecília', 'Vila Santa Delphina',
+        'Vila Santa Efigênia', 'Vila Santa Tereza', 'Vila São Francisco',
+        'Vila São José', 'Vila São Pedro', 'Vila São Paulo', 'Vila Socorro',
+        'Vila Sofia', 'Vila Suzana', 'Vila Vera', 'Vila do Sítio', 'Várzea de Baixo'
     ],
     'Zona Leste': [
-        'Aricanduva',
-        'Artur Alvim',
-        'Belém',
-        'Cidade A. E. Carvalho',
-        'Cidade Líder',
-        'Cidade Patriarca',
-        'Cidade São Mateus',
-        'Cidade Tiradentes',
-        'José Bonifácio',
-        'Lajeado',
-        'Mooca',
-        'Parada Inglesa',
-        'Parque Artur Alvim',
-        'Parque do Carmo',
-        'Parque do Estado',
-        'Parque Fontene',
-        'Parque Guainazes',
-        'Parque Maria',
-        'Parque Monte Líbano',
-        'Parque Novo Mundo',
-        'Parque Savóia',
-        'Parque São Lucas',
-        'Parque São Rafael',
-        'Penha',
-        'Ponte Rasa',
-        'São Miguel Paulista',
-        'Tatuapé',
-        'Vila América',
-        'Vila Antonieta',
-        'Vila Aricanduva',
-        'Vila Califórnia',
-        'Vila Carmosina',
-        'Vila Carrão',
-        'Vila Cláudio',
-        'Vila Divina Pastora',
-        'Vila Ema',
-        'Vila Formosa',
-        'Vila Guilherme',
-        'Vila Industrial',
-        'Vila Jaçanã',
-        'Vila Jacuí',
-        'Vila Manchester',
-        'Vila Maria',
-        'Vila Marieta',
-        'Vila Marilena',
-        'Vila Mascote',
-        'Vila Matilde',
-        'Vila Nhocuné',
-        'Vila Pimentel',
-        'Vila Prudente',
-        'Vila Santa Inês',
-        'Vila Santa Teresinha',
-        'Vila São Francisco',
-        'Vila São Mateus',
-        'Vila São Miguel',
-        'Vila São Rafael',
-        'Vila Silvia',
-        'Vila Silveira',
-        'Vila Siqueira',
-        'Vila Talarico',
-        'Vila Tolstoi',
-        'Vila Zelina'
+        'Aricanduva', 'Artur Alvim', 'Belém', 'Cidade A. E. Carvalho', 'Cidade Líder',
+        'Cidade Patriarca', 'Cidade São Mateus', 'Cidade Tiradentes', 'José Bonifácio',
+        'Lajeado', 'Mooca', 'Parada Inglesa', 'Parque Artur Alvim', 'Parque do Carmo',
+        'Parque do Estado', 'Parque Fontene', 'Parque Guainazes', 'Parque Maria',
+        'Parque Monte Líbano', 'Parque Novo Mundo', 'Parque Savóia',
+        'Parque São Lucas', 'Parque São Rafael', 'Penha', 'Ponte Rasa',
+        'São Miguel Paulista', 'Tatuapé', 'Vila América', 'Vila Antonieta',
+        'Vila Aricanduva', 'Vila Califórnia', 'Vila Carmosina', 'Vila Carrão',
+        'Vila Cláudio', 'Vila Divina Pastora', 'Vila Ema', 'Vila Formosa',
+        'Vila Guilherme', 'Vila Industrial', 'Vila Jaçanã', 'Vila Jacuí',
+        'Vila Manchester', 'Vila Maria', 'Vila Marieta', 'Vila Marilena',
+        'Vila Mascote', 'Vila Matilde', 'Vila Nhocuné', 'Vila Pimentel',
+        'Vila Prudente', 'Vila Santa Inês', 'Vila Santa Teresinha',
+        'Vila São Francisco', 'Vila São Mateus', 'Vila São Miguel',
+        'Vila São Rafael', 'Vila Silvia', 'Vila Silveira', 'Vila Siqueira',
+        'Vila Talarico', 'Vila Tolstoi', 'Vila Zelina'
     ],
     'Zona Oeste': [
-        'Butantã',
-        'Jaguaré',
-        'Jaraguá',
-        'Lapa',
-        'Morumbi',
-        'Perdizes',
-        'Pinheiros',
-        'Pirituba',
-        'Pompeia',
-        'Rio Pequeno',
-        'Vila Iolanda',
-        'Vila Ipojuca',
-        'Vila Leopoldina',
-        'Vila Madalena',
-        'Vila Sônia'
+        'Butantã', 'Jaguaré', 'Jaraguá', 'Lapa', 'Morumbi', 'Perdizes', 'Pinheiros',
+        'Pirituba', 'Pompeia', 'Rio Pequeno', 'Vila Iolanda', 'Vila Ipojuca',
+        'Vila Leopoldina', 'Vila Madalena', 'Vila Sônia'
     ],
     'Centro': [
-        'Aclimação',
-        'Barra Funda',
-        'Bela Vista',
-        'Bom Retiro',
-        'Cambuci',
-        'Campos Elíseos',
-        'Consolação',
-        'Higienópolis',
-        'Jardim Anália Franco',
-        'Jardim da Glória',
-        'Jardim do Carmo',
-        'Jardim Europa',
-        'Jardim Paulista',
-        'Liberdade',
-        'Luz',
-        'Pacaembu',
-        'Pari',
-        'Praça da Árvore',
-        'República',
-        'Santa Cecília',
-        'Sé',
-        'Vila Buarque',
-        'Vila Monumento'
+        'Aclimação', 'Barra Funda', 'Bela Vista', 'Bom Retiro', 'Cambuci',
+        'Campos Elíseos', 'Consolação', 'Higienópolis', 'Jardim Anália Franco',
+        'Jardim da Glória', 'Jardim do Carmo', 'Jardim Europa', 'Jardim Paulista',
+        'Liberdade', 'Luz', 'Pacaembu', 'Pari', 'Praça da Árvore', 'República',
+        'Santa Cecília', 'Sé', 'Vila Buarque', 'Vila Monumento'
     ],
     'Outras Localidades': [
-        'Jardim Vivan',
-        'Jardim Wilma Flor',
-        'Jardim Coimbra',
-        'Jardim Vle Virtudes',
-        'Vila Baby',
-        'Vila Barreto',
-        'Vila Bozzini',
-        'Vila Brasilia',
-        'Vila Chabilandia',
-        'Vila Chely',
-        'Vila Curuça Velha',
-        'Vila Feliz',
-        'Vila Franquis',
-        'Vila Friburgo',
-        'Vila Fukuya',
-        'Vila Ger',
-        'Vila Gertrudes',
-        'Vila Heliopolis',
-        'Vila Itaim',
-        'Vila Jacu',
-        'Vila Jaguari',
-        'Vila Jaçanã',
-        'Vila João',
-        'Vila Jurema',
-        'Vila Lousada',
-        'Vila Mairiporã',
-        'Vila Manuel',
-        'Vila Mariazinha',
-        'Vila Mariana',
-        'Vila Mazzei',
-        'Vila Monte',
-        'Vila Morumbi',
-        'Vila Nelson',
-        'Vila Nova'
+        'Jardim Vivan', 'Jardim Wilma Flor', 'Jardim Coimbra', 'Jardim Vle Virtudes',
+        'Vila Baby', 'Vila Barreto', 'Vila Bozzini', 'Vila Brasilia',
+        'Vila Chabilandia', 'Vila Chely', 'Vila Curuça Velha', 'Vila Feliz',
+        'Vila Franquis', 'Vila Friburgo', 'Vila Fukuya', 'Vila Ger',
+        'Vila Gertrudes', 'Vila Heliopolis', 'Vila Itaim', 'Vila Jacu',
+        'Vila Jaguari', 'Vila Jaçanã', 'Vila João', 'Vila Jurema', 'Vila Lousada',
+        'Vila Mairiporã', 'Vila Manuel', 'Vila Mariazinha', 'Vila Mariana',
+        'Vila Mazzei', 'Vila Monte', 'Vila Morumbi', 'Vila Nelson', 'Vila Nova'
     ]
 }
 df_criminal['regiao'] = 'Outra Região'
@@ -432,10 +202,14 @@ for regiao, bairros in zonas_sao_paulo.items():
     df_criminal.loc[df_criminal[COLUNA_BAIRRO_CRIM].isin(bairros), 'regiao'] = regiao
 
 # Carrega e processa os dados de eventos
+# Usa variáveis de ambiente para os caminhos dos arquivos, se disponíveis
+EVENTOS_FILE = os.getenv("EVENTOS_FILE", "eventos_estruturados.json")
+LOCAIS_FILE = os.getenv("LOCAIS_FILE", "locais.json")
+
 try:
-    with open("eventos_estruturados.json", "r", encoding="utf-8") as f:
+    with open(EVENTOS_FILE, "r", encoding="utf-8") as f:
         eventos = json.load(f)
-    with open("locais.json", "r", encoding="utf-8") as f:
+    with open(LOCAIS_FILE, "r", encoding="utf-8") as f:
         locais = json.load(f)
 except FileNotFoundError as e:
     print(f"Erro: O arquivo {e.filename} não foi encontrado.")
@@ -496,10 +270,6 @@ horas_unicas = list(range(24))
 # Usa os nomes dos meses agora
 meses_unicos = [nomes_meses[i] for i in sorted(df_criminal['mes'].dropna().unique())]
 meses_mapping = {nome: num for num, nome in nomes_meses.items()}
-
-# ==============================
-# 2) SERVIDOR FLASK E DASH
-# ==============================
 
 # ==============================
 # 3) LAYOUT DASH (AJUSTADO)
@@ -882,10 +652,7 @@ def atualizar_dashboard_completo(mes, regiao, cidade, bairro, natureza, evento, 
         fig_mapa_eventos, fig_hora_eventos, card_evento_frequente, card_horario_eventos
     )
 
-
-
-# ==============================
-# 3. EXECUÇÃO
-# ==============================
-if __name__ == "__main__":
-    server.run(host="0.0.0.0", port=8080, debug=True)
+# A linha de execução do servidor foi removida, pois será gerenciada pelo Gunicorn.
+# Para a execução local, você pode usar 'python app.py' com o Gunicorn.
+#if __name__ == "__main__":
+#    server.run(debug=True)
