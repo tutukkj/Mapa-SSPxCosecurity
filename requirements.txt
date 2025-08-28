@@ -1,6 +1,6 @@
-Flask==3.1.1
-dash==3.2.0
-pandas==2.3.1
-plotly==6.3.0
+dash
+plotly
+flask
+pandas
+numpy
 openpyxl
-gunicorn
