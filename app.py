@@ -11,7 +11,6 @@ from flask import Flask, render_template
 # ==============================
 # 1. SERVIDOR FLASK
 # ==============================
-# Instância do Flask que será usada para o Gunicorn
 server = Flask(__name__)
 
 @server.route('/')
@@ -22,14 +21,11 @@ def index():
 # ==============================
 # 2. DASH
 # ==============================
-# A instância do Dash é criada a partir do servidor Flask existente.
 app = Dash(__name__, server=server, url_base_pathname='/dashboard/')
 
 # ==============================
 # 1) CARREGAMENTO E PRÉ-PROCESSAMENTO
 # ==============================
-# Carrega e processa os dados criminais
-# Usa variáveis de ambiente para o caminho do arquivo, se disponível
 CRIMINAL_FILE = os.getenv("CRIMINAL_FILE", "SPDadosCriminais_SAO_PAULO_limpo.xlsx")
 
 try:
@@ -65,16 +61,13 @@ df_criminal['ano'] = df_criminal[COLUNA_DATA_CRIM].dt.year.astype('Int64')
 df_criminal['mes'] = df_criminal[COLUNA_DATA_CRIM].dt.month
 df_criminal['cidade'] = 'São Paulo' # Adiciona a cidade para permitir o filtro unificado
 
-# --- ADIÇÃO PARA CONVERTER O NÚMERO DO MÊS PARA O NOME DO MÊS ---
-# Cria um dicionário para mapear números para nomes de meses
 nomes_meses = {
     1: 'Janeiro', 2: 'Fevereiro', 3: 'Março', 4: 'Abril', 5: 'Maio', 6: 'Junho',
     7: 'Julho', 8: 'Agosto', 9: 'Setembro', 10: 'Outubro', 11: 'Novembro', 12: 'Dezembro'
 }
-# Aplica o mapeamento à coluna 'mes'
+
 df_criminal['mes_nome'] = df_criminal['mes'].map(nomes_meses)
 
-# Parser robusto de hora (0-23) para dados criminais
 def extrair_hora_robusta(serie):
     if serie is None or serie.name is None:
         return pd.Series(0, index=df_criminal.index, dtype='int64')
@@ -201,8 +194,7 @@ df_criminal['regiao'] = 'Outra Região'
 for regiao, bairros in zonas_sao_paulo.items():
     df_criminal.loc[df_criminal[COLUNA_BAIRRO_CRIM].isin(bairros), 'regiao'] = regiao
 
-# Carrega e processa os dados de eventos
-# Usa variáveis de ambiente para os caminhos dos arquivos, se disponíveis
+
 EVENTOS_FILE = os.getenv("EVENTOS_FILE", "eventos_estruturados.json")
 LOCAIS_FILE = os.getenv("LOCAIS_FILE", "locais.json")
 
@@ -230,7 +222,6 @@ df_eventos.rename(columns={
     "endereco": "endereco_local"
 }, inplace=True)
 
-# Limpeza e conversão de tipos de dados para eventos
 df_eventos["latitude"] = pd.to_numeric(df_eventos["latitude"], errors="coerce")
 df_eventos["longitude"] = pd.to_numeric(df_eventos["longitude"], errors="coerce")
 df_eventos = df_eventos.dropna(subset=["latitude", "longitude"])
@@ -244,11 +235,11 @@ for col in ['bairro', 'cidade', 'evento_nome']:
         df_eventos[col] = df_eventos[col].astype('string').str.strip().str.title()
         df_eventos[col] = df_eventos[col].replace({'': pd.NA})
         
-# --- ADIÇÃO PARA CONVERTER O NÚMERO DO MÊS PARA O NOME DO MÊS EM EVENTOS ---
+# --- CONVERTER O NÚMERO DO MÊS PARA O NOME DO MÊS EM EVENTOS ---
 df_eventos['mes_nome'] = df_eventos['mes'].map(nomes_meses)
 
 
-# Escala de cores personalizada para os mapas
+# Escala de cores 
 escala_personalizada = [
     [0.0, "rgba(0, 255, 255, 0)"],
     [0.01, "rgb(255, 255, 153)"],
@@ -258,23 +249,19 @@ escala_personalizada = [
     [1.0, "rgb(178, 24, 43)"]
 ]
 
-# Opções de filtro unificadas
 bairros_unicos = sorted(list(set(df_criminal[COLUNA_BAIRRO_CRIM].dropna().astype(str).unique()).union(set(df_eventos['bairro'].dropna().astype(str).unique()))))
 naturezas_unicas = sorted(df_criminal[COLUNA_NATUREZA_CRIM].dropna().unique())
 regioes_unicas = sorted(df_criminal['regiao'].dropna().unique())
-# Anos e Cidades agora são unificados
 anos_unicos = sorted([int(a) for a in set(df_criminal['ano'].dropna().unique()).union(set(df_eventos['ano'].dropna().unique()))])
 cidades_unicas = sorted(list(set(df_criminal['cidade'].dropna().astype(str).unique()).union(set(df_eventos['cidade'].dropna().astype(str).unique()))))
 eventos_unicos = sorted(df_eventos['evento_nome'].dropna().unique())
 horas_unicas = list(range(24))
-# Usa os nomes dos meses agora
 meses_unicos = [nomes_meses[i] for i in sorted(df_criminal['mes'].dropna().unique())]
 meses_mapping = {nome: num for num, nome in nomes_meses.items()}
 
 # ==============================
-# 3) LAYOUT DASH (AJUSTADO)
+# 3) LAYOUT DASH 
 # ==============================
-# Estilo comum para os filtros
 filter_style = {'fontSize': '14px', 'width': '200px'}
 
 app.layout = html.Div(
@@ -322,9 +309,7 @@ app.layout = html.Div(
                     placeholder="Todas",
                     style={'fontSize': '14px'}
                 )]),
-
-                # Filtros comuns
-                # Alterado para usar o nome do mês como label e o número como valor
+                
                 html.Div(style=filter_style, children=[html.Label("Mês:", style=filter_style), dcc.Dropdown(
                     id='filtro-mes', 
                     options=[{'label': i, 'value': meses_mapping[i]} for i in meses_unicos],
@@ -357,8 +342,6 @@ app.layout = html.Div(
                     placeholder="Todas as Horas",
                     style={'fontSize': '14px'}
                 )]),
-
-                # Filtro para o dashboard de eventos
                 html.Div(style=filter_style, children=[html.Label("Evento:", style=filter_style), dcc.Dropdown(
                     id='filtro-evento', 
                     options=[{'label': e, 'value': e} for e in eventos_unicos],
@@ -370,7 +353,6 @@ app.layout = html.Div(
             ]
         ),
 
-        # Contêiner principal para as duas colunas
         html.Div(
             style={
                 'display': 'flex',
@@ -519,7 +501,7 @@ app.layout = html.Div(
 )
 
 # ==============================
-# 4) CALLBACK PRINCIPAL (AJUSTADO PARA NOVOS FILTROS UNIFICADOS)
+# 4) CALLBACK PRINCIPAL 
 # ==============================
 @app.callback(
     [Output('mapa-calor-criminal', 'figure'),
@@ -688,7 +670,5 @@ def atualizar_dashboard_completo(mes, regiao, cidade, bairro, natureza, evento, 
         fig_mapa_eventos, fig_hora_eventos, card_evento_frequente, card_horario_eventos, card_total_eventos
     )
 
-# A linha de execução do servidor foi removida, pois será gerenciada pelo Gunicorn.
-# Para a execução local, você pode usar 'python app.py' com o Gunicorn.
 #if __name__ == "__main__":
 #    server.run(debug=True)
