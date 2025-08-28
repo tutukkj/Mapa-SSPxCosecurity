@@ -404,11 +404,11 @@ app.layout = html.Div(
                                         'display': 'flex', 'justifyContent': 'center', 'gap': '15px', 'margin': '20px 0'
                                     },
                                     children=[
-                                        html.Div(id='card-ocorrencias', className='metric-card', style={
+                                        html.Div(id='card-natureza', className='metric-card', style={
                                             'padding': '20px', 'backgroundColor': '#fff',
                                             'borderRadius': '12px', 'boxShadow': '0 4px 15px rgba(0,0,0,0.1)', 'textAlign': 'center', 'flex': '1'
                                         }),
-                                        html.Div(id='card-natureza', className='metric-card', style={
+                                        html.Div(id='card-ocorrencias', className='metric-card', style={
                                             'padding': '20px', 'backgroundColor': '#fff',
                                             'borderRadius': '12px', 'boxShadow': '0 4px 15px rgba(0,0,0,0.1)', 'textAlign': 'center', 'flex': '1'
                                         })
