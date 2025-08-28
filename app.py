@@ -398,11 +398,22 @@ app.layout = html.Div(
                                 'height': 'auto'
                             },
                             children=[
-                                html.H3("Mapa de Ocorrências Criminais", style={'textAlign': 'center', 'color': '#d9534f', 'margin': '0'}),
-                                html.Div(id='card-ocorrencias', className='metric-card', style={
-                                    'padding': '20px', 'backgroundColor': '#fff',
-                                    'borderRadius': '12px', 'boxShadow': '0 4px 15px rgba(0,0,0,0.1)', 'textAlign': 'center'
-                                }),
+                                html.H3("Mapa de Ocorrências Criminais (SSP)", style={'textAlign': 'center', 'color': '#d9534f', 'margin': '0'}),
+                                html.Div(
+                                    style={
+                                        'display': 'flex', 'justifyContent': 'center', 'gap': '15px', 'margin': '20px 0'
+                                    },
+                                    children=[
+                                        html.Div(id='card-ocorrencias', className='metric-card', style={
+                                            'padding': '20px', 'backgroundColor': '#fff',
+                                            'borderRadius': '12px', 'boxShadow': '0 4px 15px rgba(0,0,0,0.1)', 'textAlign': 'center', 'flex': '1'
+                                        }),
+                                        html.Div(id='card-natureza', className='metric-card', style={
+                                            'padding': '20px', 'backgroundColor': '#fff',
+                                            'borderRadius': '12px', 'boxShadow': '0 4px 15px rgba(0,0,0,0.1)', 'textAlign': 'center', 'flex': '1'
+                                        })
+                                    ]
+                                ),
                                 dcc.Graph(
                                     id='mapa-calor-criminal',
                                     config={'scrollZoom': True},
@@ -421,7 +432,7 @@ app.layout = html.Div(
                                 'height': 'auto'
                             },
                             children=[
-                                html.H3("Ocorrências por Hora", style={'textAlign': 'center', 'color': '#d9534f', 'margin': '0'}),
+                                html.H3("Distribuição de Ocorrências por Hora", style={'textAlign': 'center', 'color': '#d9534f', 'margin': '0'}),
                                 html.Div(id='card-horario', className='metric-card', style={
                                     'padding': '20px', 'backgroundColor': '#fff',
                                     'borderRadius': '12px', 'boxShadow': '0 4px 15px rgba(0,0,0,0.1)', 'textAlign': 'center'
@@ -454,11 +465,22 @@ app.layout = html.Div(
                                 'height': 'auto'
                             },
                             children=[
-                                html.H3("Mapa de Eventos", style={'textAlign': 'center', 'color': '#4B77BE', 'margin': '0'}),
-                                html.Div(id='card-evento-frequente', className='metric-card', style={
-                                    'padding': '20px', 'backgroundColor': '#fff',
-                                    'borderRadius': '12px', 'boxShadow': '0 4px 15px rgba(0,0,0,0.1)', 'textAlign': 'center'
-                                }),
+                                html.H3("Mapa de Eventos (COSECURITY)", style={'textAlign': 'center', 'color': '#4B77BE', 'margin': '0'}),
+                                html.Div(
+                                    style={
+                                        'display': 'flex', 'justifyContent': 'center', 'gap': '15px', 'margin': '20px 0'
+                                    },
+                                    children=[
+                                        html.Div(id='card-evento-frequente', className='metric-card', style={
+                                            'padding': '20px', 'backgroundColor': '#fff',
+                                            'borderRadius': '12px', 'boxShadow': '0 4px 15px rgba(0,0,0,0.1)', 'textAlign': 'center', 'flex': '1'
+                                        }),
+                                        html.Div(id='card-total-eventos', className='metric-card', style={
+                                            'padding': '20px', 'backgroundColor': '#fff',
+                                            'borderRadius': '12px', 'boxShadow': '0 4px 15px rgba(0,0,0,0.1)', 'textAlign': 'center', 'flex': '1'
+                                        })
+                                    ]
+                                ),
                                 dcc.Graph(
                                     id='mapa-eventos',
                                     config={'scrollZoom': True, 'displayModeBar': False},
@@ -504,10 +526,12 @@ app.layout = html.Div(
      Output('grafico-ocorrencias-hora-criminal', 'figure'),
      Output('card-ocorrencias', 'children'),
      Output('card-horario', 'children'),
+     Output('card-natureza', 'children'), # Novo output
      Output('mapa-eventos', 'figure'),
      Output('grafico-hora-eventos', 'figure'),
      Output('card-evento-frequente', 'children'),
-     Output('card-horario-eventos', 'children')],
+     Output('card-horario-eventos', 'children'),
+     Output('card-total-eventos', 'children')], # Novo output
     [Input('filtro-mes', 'value'),
      Input('filtro-regiao', 'value'),
      Input('filtro-cidade', 'value'),
@@ -592,8 +616,17 @@ def atualizar_dashboard_completo(mes, regiao, cidade, bairro, natureza, evento, 
         horario_txt_crim = f"{horario_mais_frequente_crim:02d}:00"
     else:
         horario_txt_crim = "N/A"
+    
+    # Cálculo da natureza apurada mais frequente
+    if not df_criminal_filtrado.empty:
+        natureza_frequente = df_criminal_filtrado[COLUNA_NATUREZA_CRIM].mode().iloc[0] if not df_criminal_filtrado[COLUNA_NATUREZA_CRIM].mode().empty else "N/A"
+    else:
+        natureza_frequente = "N/A"
+
     card_ocorrencias = html.Div([html.Div(f'{total_ocorrencias:,}'.replace(',', '.'), className='metric-value'), html.Div('Total de Ocorrências', className='metric-label')])
+    card_natureza = html.Div([html.Div(natureza_frequente, className='metric-value'), html.Div('Natureza Mais Frequente', className='metric-label')])
     card_horario = html.Div([html.Div(horario_txt_crim, className='metric-value'), html.Div('Horário Mais Frequente', className='metric-label')])
+
 
     # --- GERAÇÃO DOS GRÁFICOS E CARTÕES DE EVENTOS ---
     # Mapa de Eventos
@@ -643,13 +676,16 @@ def atualizar_dashboard_completo(mes, regiao, cidade, bairro, natureza, evento, 
         xaxis={'tickmode': 'linear'}, yaxis={'tickformat': ',.0f'},
         title={'x': 0.5, 'xanchor': 'center'}, margin={"r":20, "t":40, "l":20, "b":20}
     ) 
-    # Novos cartões para SSP
+
+    # Novos cartões para eventos
     card_evento_frequente = html.Div([html.Div(top_evento, className='metric-value'), html.Div('Evento Mais Frequente', className='metric-label')])
+    total_eventos = len(df_eventos_filtrado)
+    card_total_eventos = html.Div([html.Div(f'{total_eventos:,}'.replace(',', '.'), className='metric-value'), html.Div('Total de Eventos', className='metric-label')])
     card_horario_eventos = html.Div([html.Div(horario_txt_eventos, className='metric-value'), html.Div('Horário Mais Frequente', className='metric-label')])
 
     return (
-        fig_mapa_crim, fig_hora_crim, card_ocorrencias, card_horario,
-        fig_mapa_eventos, fig_hora_eventos, card_evento_frequente, card_horario_eventos
+        fig_mapa_crim, fig_hora_crim, card_ocorrencias, card_horario, card_natureza,
+        fig_mapa_eventos, fig_hora_eventos, card_evento_frequente, card_horario_eventos, card_total_eventos
     )
 
 # A linha de execução do servidor foi removida, pois será gerenciada pelo Gunicorn.
